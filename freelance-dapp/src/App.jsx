@@ -1,13 +1,14 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Navbar from "./components/Navbar";
-
-import Home from "./pages/Home";
-import Jobs from "./pages/Jobs";
-import PostJob from "./pages/PostJob";
-import Freelancer from "./pages/Freelancer";
-import SubmitWork from "./pages/SubmitWork";
 import Footer from "./components/Footer";
 import GlobalNetwork from "./components/GlobalNetwork";
+
+import Home from "./pages/Home";
+import Marketplace from "./pages/Marketplace";
+import JobDetails from "./pages/JobDetails";
+import CreateJob from "./pages/CreateJob";
+import ClientDashboard from "./pages/ClientDashboard";
+import FreelancerDashboard from "./pages/FreelancerDashboard";
 
 function App() {
   return (
@@ -16,16 +17,15 @@ function App() {
 
       <Routes>
         <Route path="/" element={<Home />} />
-        <Route path="/jobs" element={<Jobs />} />
-        <Route path="/post-job" element={<PostJob />} />
-        <Route path="/freelancer" element={<Freelancer />} />
-        <Route path="/submit-work" element={<SubmitWork />} />
+        <Route path="/jobs" element={<Marketplace />} />
+        <Route path="/jobs/:id" element={<JobDetails />} />
+        <Route path="/create-job" element={<CreateJob />} />
+        <Route path="/client-dashboard" element={<ClientDashboard />} />
+        <Route path="/freelancer-dashboard" element={<FreelancerDashboard />} />
       </Routes>
+
       <GlobalNetwork />
-
       <Footer />
-
-
     </BrowserRouter>
   );
 }

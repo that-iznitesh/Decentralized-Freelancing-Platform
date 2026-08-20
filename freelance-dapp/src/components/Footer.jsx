@@ -4,7 +4,7 @@ function Footer() {
   return (
     <div className="bg-[#0b1220] text-gray-300 px-10 py-12">
 
-      {/* 🔥 Top Section */}
+      {/* Top Section */}
       <div className="grid grid-cols-1 md:grid-cols-5 gap-8">
 
         {/* Logo + Info */}
@@ -73,7 +73,7 @@ function Footer() {
 
       </div>
 
-      {/* 🔥 Bottom Section */}
+      {/* Bottom Section */}
       <div className="border-t border-gray-700 mt-10 pt-6 flex flex-col md:flex-row justify-between text-sm text-gray-400">
 
         <p>© 2026 Freelance DApp. All rights reserved.</p>

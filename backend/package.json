@@ -1,0 +1,21 @@
+{
+  "name": "freelance-dapp-backend",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Node/Express + MongoDB backend for the Decentralized Freelancing Platform. Handles off-chain data (profiles, job metadata, proposals, submissions, transaction history). Blockchain remains the source of truth for trustless data (ownership, escrow, payments).",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "nodemon server.js"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2",
+    "mongoose": "^8.5.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.4"
+  }
+}

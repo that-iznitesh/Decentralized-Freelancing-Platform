@@ -2,7 +2,7 @@ function GlobalNetwork() {
   return (
     <div className="relative bg-black text-white py-20 px-6 overflow-hidden">
 
-      {/* 🌍 Background Image */}
+      {/* Background Image */}
       <img
         src="/world.jpg"
         alt="world"
@@ -12,7 +12,7 @@ function GlobalNetwork() {
       {/* Content */}
       <div className="relative max-w-7xl mx-auto grid md:grid-cols-2 gap-10">
 
-        {/* 🔥 LEFT SIDE */}
+        {/* LEFT SIDE */}
         <div>
           <h1 className="text-5xl font-bold leading-tight">
             Tap into a <br />
@@ -51,12 +51,12 @@ function GlobalNetwork() {
             </div>
 
             <p className="text-pink-500 mt-4 cursor-pointer">
-              Get started now →
+              Get started now 
             </p>
           </div>
         </div>
 
-        {/* 🔥 RIGHT SIDE (Cards) */}
+        {/* RIGHT SIDE (Cards) */}
         <div className="relative flex flex-col gap-6">
 
           {[1,2,3,4,5,6].map((i) => (
@@ -71,7 +71,7 @@ function GlobalNetwork() {
               />
 
               <div className="flex-1">
-                <div className="text-pink-500">★★★★★</div>
+                <div className="text-pink-500"></div>
                 <div className="h-2 bg-gray-500 rounded mt-1 w-3/4"></div>
               </div>
             </div>
