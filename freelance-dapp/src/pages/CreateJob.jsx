@@ -1,17 +1,15 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import JobForm from "../components/JobForm";
-import { postJob } from "../hooks/useWeb3";
+import { useAuth } from "../context/AuthContext";
+import { api } from "../api/client";
 import { FaBriefcase } from "react-icons/fa";
 
 function CreateJob() {
   const navigate = useNavigate();
+  const { address } = useAuth();
   const [form, setForm] = useState({
-    title: "",
-    description: "",
-    budget: "",
-    deadline: "",
-    milestoneDescription: "",
+    title: "", description: "", budget: "", deadline: "", milestoneDescription: "",
   });
 
   const handleSubmit = async () => {
@@ -21,20 +19,21 @@ function CreateJob() {
     }
 
     try {
-      // Mock for now - later this will:
-      // 1. Save job metadata to MongoDB via the backend
-      // 2. Lock funds in escrow via the smart contract (blockchain side)
-      const tx = await postJob({
+      await api.post("/jobs", {
         title: form.title,
-        budget: form.budget,
+        description: form.description,
+        budget: Number(form.budget),
         deadline: form.deadline,
+        milestoneDescription: form.milestoneDescription,
+        clientAddress: address,
       });
 
-      alert("Job Posted!\nTX Hash: " + tx.hash);
+      // Escrow funding is done separately (see Client Dashboard) once
+      // the smart contract side is ready.
+      alert("Job posted!");
       navigate("/jobs");
     } catch (err) {
-      console.log(err);
-      alert("Error posting job");
+      alert(err.message);
     }
   };
 
@@ -45,7 +44,6 @@ function CreateJob() {
           <FaBriefcase className="text-emerald-400" />
           Create Job
         </h1>
-
         <JobForm form={form} onChange={setForm} onSubmit={handleSubmit} />
       </div>
     </div>

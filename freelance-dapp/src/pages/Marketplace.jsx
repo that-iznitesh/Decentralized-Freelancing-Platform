@@ -1,15 +1,22 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import JobCard from "../components/JobCard";
-import { jobs } from "../data/jobs";
+import { api } from "../api/client";
 import { FaSearch } from "react-icons/fa";
 
 function Marketplace() {
+  const [jobs, setJobs] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState("ALL");
 
-  const filteredJobs =
-    statusFilter === "ALL"
-      ? jobs
-      : jobs.filter((job) => job.status === statusFilter);
+  useEffect(() => {
+    (async () => {
+      setLoading(true);
+      const query = statusFilter === "ALL" ? "" : `?status=${statusFilter}`;
+      const data = await api.get(`/jobs${query}`);
+      setJobs(data || []);
+      setLoading(false);
+    })();
+  }, [statusFilter]);
 
   return (
     <div className="min-h-screen bg-[#0b1220] text-white px-6 py-10">
@@ -32,16 +39,16 @@ function Marketplace() {
           </select>
         </div>
 
+        {loading && <p className="mt-10 text-gray-400">Loading jobs...</p>}
+
         <div className="mt-8 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredJobs.map((job) => (
-            <JobCard key={job.id} job={job} />
+          {jobs.map((job) => (
+            <JobCard key={job._id} job={{ ...job, id: job._id }} />
           ))}
         </div>
 
-        {filteredJobs.length === 0 && (
-          <p className="mt-10 text-center text-gray-400">
-            No jobs match this filter yet.
-          </p>
+        {!loading && jobs.length === 0 && (
+          <p className="mt-10 text-center text-gray-400">No jobs posted yet.</p>
         )}
       </div>
     </div>

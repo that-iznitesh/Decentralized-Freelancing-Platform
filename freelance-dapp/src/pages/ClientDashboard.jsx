@@ -1,58 +1,63 @@
-import { useState } from "react";
-import { jobs as allJobs } from "../data/jobs";
-import { getApplicationsByJobId } from "../data/applications";
-import { currentClient } from "../data/users";
+import { useEffect, useState } from "react";
+import { useAuth } from "../context/AuthContext";
+import { api } from "../api/client";
 import ApplicationCard from "../components/ApplicationCard";
 import MilestoneCard from "../components/MilestoneCard";
 import StatusBadge from "../components/StatusBadge";
 import { FaBriefcase, FaLock, FaCheckCircle } from "react-icons/fa";
 
 function ClientDashboard() {
-  const myJobs = allJobs.filter(
-    (job) => job.clientAddress === currentClient.walletAddress
-  );
-  const [fundedJobs, setFundedJobs] = useState([]);
+  const { address, user } = useAuth();
+  const [jobs, setJobs] = useState([]);
+  const [applicationsByJob, setApplicationsByJob] = useState({});
+  const [milestonesByJob, setMilestonesByJob] = useState({});
 
-  // Mock milestone state per job, keyed by job id - later this comes from
-  // the "milestones" collection in MongoDB
-  const [milestones, setMilestones] = useState(() =>
-    Object.fromEntries(
-      myJobs.map((job) => [
-        job.id,
-        {
-          id: job.id,
-          title: "Final Deliverable",
-          description: job.milestoneDescription,
-          status: job.status === "COMPLETED" ? "APPROVED" : "SUBMITTED",
-          submissionText:
-            job.status !== "OPEN" ? "Work delivered, ready for review." : "",
-          submissionLink: job.status !== "OPEN" ? "https://github.com/example/deliverable" : "",
-        },
-      ])
-    )
-  );
+  const loadData = async () => {
+    const myJobs = (await api.get(`/jobs?clientAddress=${address}`)) || [];
+    setJobs(myJobs);
 
-  const handleApproveMilestone = (jobId) => {
-    // Mock action - later this calls the smart contract to release
-    // escrow funds to the freelancer once approved
-    setMilestones((prev) => ({
-      ...prev,
-      [jobId]: { ...prev[jobId], status: "APPROVED" },
-    }));
-    alert(`Milestone approved for job #${jobId}. Payment release triggered.`);
+    const appsMap = {};
+    const msMap = {};
+    for (const job of myJobs) {
+      appsMap[job._id] = (await api.get(`/applications?jobId=${job._id}`)) || [];
+      const ms = (await api.get(`/milestones?jobId=${job._id}`)) || [];
+      msMap[job._id] = ms[0] || null;
+    }
+    setApplicationsByJob(appsMap);
+    setMilestonesByJob(msMap);
   };
 
-  const handleAccept = (jobId, applicationId) => {
-    // Mock action - later this calls the backend to update application
-    // status and the smart contract to assign the freelancer on-chain
-    alert(`Freelancer accepted for job #${jobId} (application #${applicationId})`);
+  useEffect(() => {
+    if (address) loadData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [address]);
+
+  const handleAccept = async (job, application) => {
+    await api.put(`/applications/${application._id}`, { status: "ACCEPTED" });
+    await api.put(`/jobs/${job._id}`, {
+      freelancerAddress: application.freelancerAddress,
+      status: "IN_PROGRESS",
+    });
+    await api.post("/milestones", {
+      jobId: job._id,
+      title: "Final Deliverable",
+      description: job.milestoneDescription,
+      amount: job.budget,
+      status: "PENDING",
+    });
+    await loadData();
   };
 
   const handleFundEscrow = (jobId) => {
-    // Mock action - later this triggers a wallet transaction to lock
-    // funds into the escrow smart contract
-    setFundedJobs((prev) => [...prev, jobId]);
-    alert(`Escrow funded for job #${jobId}`);
+    // TODO: teammate ke smart contract function se replace hoga
+    // (freelance-dapp/web3/marketplace.js) - abhi ke liye placeholder
+    alert(`Escrow funding for job #${jobId} - waiting on smart contract integration`);
+  };
+
+  const handleApproveMilestone = async (milestone) => {
+    await api.put(`/milestones/${milestone._id}`, { status: "APPROVED" });
+    await loadData();
+    // Payment release bhi teammate ke contract call se hoga
   };
 
   return (
@@ -62,62 +67,52 @@ function ClientDashboard() {
           <FaBriefcase className="text-emerald-400" />
           Client Dashboard
         </h1>
-        <p className="text-gray-400 mb-8">Logged in as {currentClient.name}</p>
+        <p className="text-gray-400 mb-8">Logged in as {user?.name || address}</p>
 
         <div className="space-y-8">
-          {myJobs.map((job) => {
-            const jobApplications = getApplicationsByJobId(job.id);
-            const isFunded = fundedJobs.includes(job.id);
+          {jobs.map((job) => {
+            const jobApplications = applicationsByJob[job._id] || [];
+            const milestone = milestonesByJob[job._id];
 
             return (
-              <div
-                key={job.id}
-                className="bg-white/5 border border-white/10 rounded-2xl p-6"
-              >
+              <div key={job._id} className="bg-white/5 border border-white/10 rounded-2xl p-6">
                 <div className="flex justify-between items-start gap-4">
                   <div>
                     <h2 className="text-xl font-semibold">{job.title}</h2>
                     <p className="text-sm text-gray-400 mt-1">
-                      {jobApplications.length} application
-                      {jobApplications.length !== 1 ? "s" : ""}
+                      {jobApplications.length} application{jobApplications.length !== 1 ? "s" : ""}
                     </p>
                   </div>
                   <StatusBadge status={job.status} />
                 </div>
 
                 <button
-                  onClick={() => handleFundEscrow(job.id)}
-                  disabled={isFunded}
-                  className="mt-4 flex items-center gap-2 bg-blue-500 hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed transition text-white px-4 py-2 rounded-lg text-sm font-medium"
+                  onClick={() => handleFundEscrow(job._id)}
+                  className="mt-4 flex items-center gap-2 bg-blue-500 hover:bg-blue-600 transition text-white px-4 py-2 rounded-lg text-sm font-medium"
                 >
-                  {isFunded ? <FaCheckCircle /> : <FaLock />}
-                  {isFunded ? "Escrow Funded" : "Fund Escrow"}
+                  <FaLock /> Fund Escrow
                 </button>
 
                 {jobApplications.length > 0 && (
                   <div className="mt-5 space-y-3">
-                    <h3 className="text-sm font-semibold text-gray-300">
-                      Applications
-                    </h3>
+                    <h3 className="text-sm font-semibold text-gray-300">Applications</h3>
                     {jobApplications.map((app) => (
                       <ApplicationCard
-                        key={app.id}
+                        key={app._id}
                         application={app}
-                        onAccept={() => handleAccept(job.id, app.id)}
+                        onAccept={() => handleAccept(job, app)}
                       />
                     ))}
                   </div>
                 )}
 
-                {job.status !== "OPEN" && milestones[job.id] && (
+                {milestone && (
                   <div className="mt-5">
-                    <h3 className="text-sm font-semibold text-gray-300 mb-3">
-                      Milestone
-                    </h3>
+                    <h3 className="text-sm font-semibold text-gray-300 mb-3">Milestone</h3>
                     <MilestoneCard
-                      milestone={milestones[job.id]}
+                      milestone={milestone}
                       role="client"
-                      onApprove={() => handleApproveMilestone(job.id)}
+                      onApprove={() => handleApproveMilestone(milestone)}
                     />
                   </div>
                 )}
@@ -125,9 +120,7 @@ function ClientDashboard() {
             );
           })}
 
-          {myJobs.length === 0 && (
-            <p className="text-gray-400">You haven't posted any jobs yet.</p>
-          )}
+          {jobs.length === 0 && <p className="text-gray-400">You haven't posted any jobs yet.</p>}
         </div>
       </div>
     </div>
